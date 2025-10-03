@@ -1,5 +1,5 @@
 {
-    "name": "igniterlabs/ti-ext-shipday",
+    "name": "avisaas/ti-ext-shipday",
     "type": "tastyigniter-package",
     "description": "Support local deliveries for your TastyIgniter orders with Shipday.",
     "license": "MIT",
@@ -11,7 +11,8 @@
     "require": {
         "tastyigniter/core": "^v4.0",
         "tastyigniter/ti-ext-cart": "^v4.0",
-        "tastyigniter/ti-ext-local": "^v4.0"
+        "tastyigniter/ti-ext-local": "^v4.0",
+        "avisaas/ti-ext-connector": "^1.3"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
@@ -71,5 +72,8 @@
             "@test:static",
             "@test:coverage"
         ]
+    },
+    "replace": {
+        "igniterlabs/ti-ext-shipday": "self.version"
     }
 }
