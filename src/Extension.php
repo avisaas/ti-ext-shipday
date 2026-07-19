@@ -4,70 +4,38 @@ declare(strict_types=1);
 
 namespace IgniterLabs\Shipday;
 
-use Igniter\System\Classes\BaseExtension;
-use IgniterLabs\Shipday\CartConditions\OnDemandDelivery;
-use IgniterLabs\Shipday\Classes\Client;
-use IgniterLabs\Shipday\Classes\EventRegistry;
-use IgniterLabs\Shipday\Models\Settings;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
-use Override;
+use IgniterLabs\Shipday\AviMarketplace\Admin;
+use IgniterLabs\Shipday\AviMarketplace\Setup;
 
-/**
- * Shipday Extension Information File
- */
-class Extension extends BaseExtension
+class Extension extends UpstreamExtension
 {
-    public $singletons = [
-        Client::class,
-        EventRegistry::class,
-    ];
+    private bool $aviMarketplaceGated = false;
 
-    #[Override]
+    public function __construct($app)
+    {
+        parent::__construct($app);
+
+        $gated = Setup::gated();
+        $this->aviMarketplaceGated = $gated;
+
+        if ($gated) {
+            $this->disabled = true;
+        }
+
+        rescue(fn () => Admin::attach($gated), null, false);
+    }
+
+    public function register(): void
+    {
+        if (!Setup::withholds($this->aviMarketplaceGated)) {
+            parent::register();
+        }
+    }
+
     public function boot(): void
     {
-        resolve(EventRegistry::class)->boot();
-
-        VerifyCsrfToken::except([
-            'shipday/webhook/*',
-        ]);
-    }
-
-    /**
-     * Registers any admin permissions used by this extension.
-     */
-    #[Override]
-    public function registerPermissions(): array
-    {
-        return [
-            'IgniterLabs.Shipday.ManageSettings' => [
-                'description' => 'lang:igniterlabs.shipday::default.help_permission',
-                'group' => 'igniter.cart::default.text_permission_menu_group',
-            ],
-        ];
-    }
-
-    #[Override]
-    public function registerSettings(): array
-    {
-        return [
-            'settings' => [
-                'label' => 'lang:igniterlabs.shipday::default.text_settings',
-                'description' => 'lang:igniterlabs.shipday::default.help_settings',
-                'icon' => 'fa fa-truck',
-                'model' => Settings::class,
-                'permissions' => ['IgniterLabs.Shipday.ManageSettings'],
-            ],
-        ];
-    }
-
-    public function registerCartConditions(): array
-    {
-        return [
-            OnDemandDelivery::class => [
-                'name' => 'shipdaydelivery',
-                'label' => 'lang:igniterlabs.shipday::default.text_on_demand_delivery_fee',
-                'description' => 'lang:igniterlabs.shipday::default.text_on_demand_delivery_fee',
-            ],
-        ];
+        if (method_exists(parent::class, 'boot') && !Setup::withholds($this->aviMarketplaceGated)) {
+            parent::boot();
+        }
     }
 }
